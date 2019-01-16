@@ -30,22 +30,22 @@ The completed exercise is due on Thursday, 17 January, 2018 before class begins.
 ### Question
 Why are reproducible practices becoming the norm in data analytics?
 
-> Answer: 
+> Answer: Reproducale practices are becoming the norm in data analytics because as the field of data management and analysis grows, and pools of data continue to grow as well, it is important to be able to see the process that produced a product, particularly if analyzed data is being shared. Moreover, it is important to be able to easily retrace steps taken in an analysis, especially when the analysis needs to be modified.
 
 ### Question
 What are your previous experiences with data analytics, R, and Git? Include both formal and informal training.
 
-> Answer: 
+> Answer: I have no prior experience with data analytics or Git, but I have some familiarity with R. I have used R during my assistantship, but the code was written for me, and I learned very specific code for the analysis I was doing.
 
 ### Question
 Are there any components of the course about which you feel confident?
 
-> Answer: 
+> Answer: Despite my minimal experience with R, I feel confident to begin the semester because I know both of the professors will teach this course well.  Both Kateri and John communicate well and are genuinely interested in our progress, which are essential to my understanding of the material.
 
 ### Question
 Are there any components of the course about which you feel apprehensive?
 
-> Answer: 
+> Answer: I don't feel apprehensive about any part of the course, but I understand that it will be frustrating at points, particularly when it comes to trouble shooting.
 
 
 ## 2) GitHub
@@ -53,6 +53,6 @@ Are there any components of the course about which you feel apprehensive?
 ### Your Repository
 Provide a link below to your course repository in GitHub. Make sure you have pulled all recent changes from the course repository (https://github.com/KateriSalk/Environmental_Data_Analytics) and that you have updated your course README file. 
 
-> Answer: 
+> Answer: https://github.com/jakegreif/Environmental_Data_Analytics 
 
 
