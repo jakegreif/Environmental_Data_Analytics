@@ -71,14 +71,16 @@ Note: In the Knit menu in the Editor, you will need to specify whether your knit
 USGS.flow.data <- read.csv("./Data/Raw/USGS_Site02085000_Flow_Raw.csv")
 
 # What happens if we don't assign a name to our imported dataset?
-#read.csv("./Data/Raw/USGS_Site02085000_Flow_Raw.csv")
+read.csv("./Data/Raw/USGS_Site02085000_Flow_Raw.csv") # It uploads all the data into your console, and it cuts off your data because it's too large for R to handle
 
 # Another option is to choose with your browser
-# read.csv(file.choose())
+# read.csv(file.choose()) # It isn't so efficient
 
 # To import .txt files, use read.table rather than read.csv
 #read.table()
 
+
+# Relative file path is definitely the easiest way
 ```
 
 ## EXPLORE YOUR DATASET
@@ -101,27 +103,27 @@ colnames(USGS.flow.data) <- c("agency_cd", "site_no", "datetime",
                               "gage.height.max", "gage.height.max.approval", 
                               "gage.height.min", "gage.height.min.approval", 
                               "gage.height.mean", "gage.height.mean.approval")
-str(USGS.flow.data)
+str(USGS.flow.data) # Tells us about the strucutre of the data, including info about data types by row
 dim(USGS.flow.data)
 length(USGS.flow.data)
 
-head(USGS.flow.data)
-head(USGS.flow.data, 10)
+head(USGS.flow.data) # Gives us first 6 rows of each column, this is default
+head(USGS.flow.data, 10) # Specifies how many rows of each column you want to see
 tail(USGS.flow.data, 5)
-USGS.flow.data[30000:30005, c(3, 8, 14)]
+USGS.flow.data[30000:30005, c(3, 8, 14)] # Gives us rows 30000-30005 and columns 3, and 14
 
-class(USGS.flow.data$datetime)
+class(USGS.flow.data$datetime) # What type of data is the date and time column?
 class(USGS.flow.data$discharge.mean)
 class(USGS.flow.data$gage.height.mean)
 
-summary(USGS.flow.data)
-summary(USGS.flow.data$discharge.mean)
+summary(USGS.flow.data) # Gives you basic stats about numerical data
+summary(USGS.flow.data$discharge.mean) 
 summary(USGS.flow.data$gage.height.mean)
 
 ```
 
 What happened to blank cells in the spreadsheet when they were imported into R?
-> ANSWER: 
+> ANSWER: They were populated with NA if the column is numeric
 
 ## TIPS AND TRICKS: SPREADSHEETS
 
