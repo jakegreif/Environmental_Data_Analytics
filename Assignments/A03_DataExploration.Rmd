@@ -3,6 +3,8 @@ title: "Assignment 3: Data Exploration"
 author: Jake Greif
 output: pdf_document
 geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## OVERVIEW
@@ -40,13 +42,19 @@ N.Temp.Lake.data <- read.csv("/Users/jakegreif/Environmental_Data_Analytics/Data
 
 # View dataset
 View(N.Temp.Lake.data)
+
+# Define dataset type; get familiar with dataset layout
+class(N.Temp.Lake.data)
+colnames(N.Temp.Lake.data)
+class(N.Temp.Lake.data$sampledate)
+
 ```
 
 ## 2) Learn about your system
 
 Read about your dataset in the NTL-LTER README file. What are three salient pieces of information you gained from reading this file?
 
-> ANSWER: 
+> ANSWER: The three most important pieces of information gathered from the README file are the context of our data (where/when/how it was collected), what type of data was collected, and the naming conventions/file formats.
 
 ## 3) Obtain basic summaries of your data
 
@@ -60,27 +68,40 @@ Write R commands to display the following information:
 
 ```{r}
 # 1
+dim(N.Temp.Lake.data)
 
 # 2
+class(N.Temp.Lake.data)
 
 # 3
+head(N.Temp.Lake.data, 8)
 
 # 4
+class(N.Temp.Lake.data$lakename)
+class(N.Temp.Lake.data$sampledate)
+class(N.Temp.Lake.data$depth)
+class(N.Temp.Lake.data$temperature_C)
 
 # 5
+summary(N.Temp.Lake.data$lakename)
+summary(N.Temp.Lake.data$depth)
+summary(N.Temp.Lake.data$temperature_C)
 
 ```
 
 Change sampledate to class = date. After doing this, write an R command to display that the class of sammpledate is indeed date. Write another R command to show the first 10 rows of the date column. 
 
 ```{r}
+N.Temp.Lake.data$sampledate <- as.Date(N.Temp.Lake.data$sampledate, format = "%y%m%d")
 
+class(N.Temp.Lake.data$sampledate)
+
+head(N.Temp.Lake.data$sampledate, 10)
 ```
 
 Question: Do you want to remove NAs from this dataset? Why or why not?
 
-> ANSWER: 
-
+> ANSWER: I want to remove the NAs from this dataset because I'd like to quantitatively analyze the data. If I do not remove the NAs, I won't be able to run some statistical models, such as a timeseries. 
 
 ## 4) Explore your data graphically
 
@@ -96,30 +117,46 @@ Write R commands to display graphs depicting:
 
 ```{r}
 # 1
+ggplot(N.Temp.Lake.data, aes(x = temperature_C)) + 
+         geom_bar()
 
 # 2
+ggplot(N.Temp.Lake.data) +
+  geom_histogram(aes(x = temperature_C))
 
 # 3
+ggplot(N.Temp.Lake.data) +
+  geom_histogram(aes(x = temperature_C), binwidth = 5)
 
 # 4
+ggplot(N.Temp.Lake.data) +
+  geom_freqpoly(aes(x = temperature_C, color = lakename), bins = 50) +
+  scale_x_continuous(limits = c(0, 35)) +
+  theme(legend.position = "top")
 
 # 5
+ggplot(N.Temp.Lake.data) +
+  geom_boxplot(aes(x = lakename, y = temperature_C))
 
 # 6
+ggplot(N.Temp.Lake.data) +
+  geom_boxplot(aes(x = depth, y = temperature_C, group = cut_width(depth, 0.25)))
 
 # 7 
+ggplot(N.Temp.Lake.data) +
+  geom_point(aes(y = temperature_C, x = depth))
 
 ```
 ## 5) Form questions for further data analysis
 
 What did you find out about your data from the basic summaries and graphs you made? Describe in 4-6 sentences.
 
-> ANSWER: 
+> ANSWER: I learned that temperatures both decreases and become less variable as depth increases. I also learned that the lakes being monitored are generally cold, and have a proportional distribution of temperature readings, which is a good indication that they all reside in the same climate and are likely similar in size. 
 
 What are 3 further questions you might ask as you move forward with  analysis of this dataset?
 
-> ANSWER 1: 
+> ANSWER 1: Does dissolved oxygen change with depth?
 
-> ANSWER 2: 
+> ANSWER 2: How does the temperature at a depth of X meters change temporally in each lake?
 
-> ANSWER 3: 
+> ANSWER 3: How does the dissolved oxygen content in each lake compare?
