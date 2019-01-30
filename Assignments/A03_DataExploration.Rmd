@@ -92,7 +92,7 @@ summary(N.Temp.Lake.data$temperature_C)
 Change sampledate to class = date. After doing this, write an R command to display that the class of sammpledate is indeed date. Write another R command to show the first 10 rows of the date column. 
 
 ```{r}
-N.Temp.Lake.data$sampledate <- as.Date(N.Temp.Lake.data$sampledate, format = "%y%m%d")
+N.Temp.Lake.data$sampledate <- as.Date(N.Temp.Lake.data$sampledate, format = "%m/%d/%y")
 
 class(N.Temp.Lake.data$sampledate)
 
