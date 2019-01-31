@@ -17,9 +17,13 @@ editor_options:
 
 After we've completed basic data exploration on a dataset, what step comes next? How does this help us to ask and answer questions about datasets?
 
+> ANSWER: Data wrangling; it helps us get the data in a format that is useful for our analysis.
+
 ## SET UP YOUR DATA ANALYSIS SESSION
 
 In assignment 3, you explored the North Temperate Lakes Long-Term Ecological Research Station data for physical and chemical data. What did you learn about this dataset in your assignment?
+
+> There's a relationship between temp. and depth. They also measured oxygen content, etc.
 
 We will continue working with this dataset today. 
 
@@ -51,6 +55,9 @@ What is the best way to wrangle data? There are multiple ways to arrive at a spe
 
 ```{r, results = "hide"}
 vignette("dplyr")
+
+# d stands for dataset, plyr is a reference to actual plyers, like the tool 
+# vignette is helpful in explaining what it is. It's an intro to dplyr
 ```
 
 
@@ -60,13 +67,16 @@ Filtering allows us to choose certain rows (observations) in our dataset.
 
 A few relevant commands: 
 `==`
+> equal
 `!=`
+> is not
 `<`
 `<=`
 `>`
 `>=`
 `&`
 `|`
+> or
 
 ```{r}
 class(NTL.phys.data$lakeid)
@@ -75,9 +85,13 @@ class(NTL.phys.data$depth)
 # matrix filtering
 NTL.phys.data.surface1 <- NTL.phys.data[NTL.phys.data$depth == 0,]
 
+# This ^ is creating a subset of the data, showing us observations at a depth of only 0, while keeping the row names from the original dataset
+
 # dplyr filtering
 NTL.phys.data.surface2 <- filter(NTL.phys.data, depth == 0)
 NTL.phys.data.surface3 <- filter(NTL.phys.data, depth < 0.25)
+
+# This ^ does the same thing as the matrix filtering, except it stores the rows as new row names
 
 # Did the methods arrive at the same result?
 head(NTL.phys.data.surface1)
@@ -96,6 +110,9 @@ NTL.phys.data.PeterPaul2 <- filter(NTL.phys.data, lakename != "Central Long Lake
                                      lakename != "Ward Lake" & lakename != "West Long Lake")
 NTL.phys.data.PeterPaul3 <- filter(NTL.phys.data, lakename %in% c("Paul Lake", "Peter Lake"))
 
+# Use | to include things, use & to exclude things
+# PeterPaul3 uses %in%, which means 'include' the 
+
 # Choose a range of conditions of a numeric or integer variable
 summary(NTL.phys.data$daynum)
 NTL.phys.data.JunethruOctober1 <- filter(NTL.phys.data, daynum > 151 & daynum < 305)
@@ -103,19 +120,25 @@ NTL.phys.data.JunethruOctober2 <- filter(NTL.phys.data, daynum > 151, daynum < 3
 NTL.phys.data.JunethruOctober3 <- filter(NTL.phys.data, daynum >= 152 & daynum <= 304)
 NTL.phys.data.JunethruOctober4 <- filter(NTL.phys.data, daynum %in% c(152:304))
 
+# These are various ways to filter a variable (in this case it's day #)
+
 # Exercise: 
 # filter NTL.phys.data for the year 1999
-# what code do you need to use, based on the class of the variable?
+# what code do you need to use, based on the class of the variable? ANSWER: character or factor must be put in quotes
 class(NTL.phys.data$year4)
+
+NTL.phys.data.1999 <- filter(NTL.phys.data, year4 == 1999)
 
 # Exercise: 
 # filter NTL.phys.data for Tuesday Lake from 1990 through 1999.
+NTL.phys.data.Tues90thru99 <- filter(NTL.phys.data, year4 >= 1990 & year4 <= 1999, 
+                                         lakename == "Tuesday Lake")
 
-
+View(NTL.phys.data.Tues90thru99)
 ```
 Question: Why don't we filter using row numbers?
 
-> ANSWER: 
+> ANSWER: It's not easy to understand, and it's not so efficient to look through the rows to find what you want. Plus, if data is added to the raw file, it wouldn't be included 
 
 ### Arrange
 
@@ -125,9 +148,12 @@ Arranging allows us to change the order of rows in our dataset. By default, the 
 NTL.phys.data.depth.ascending <- arrange(NTL.phys.data, depth)
 NTL.phys.data.depth.descending <- arrange(NTL.phys.data, desc(depth))
 
+# This arranges our data just like "filter" on excel arranges a variable (column) in ascending/descending order
+
 # Exercise: 
 # Arrange NTL.phys.data by temperature, in descending order. 
-# Which dates, lakes, and depths have the highest temperatures?
+# Which dates, lakes, and depths have the highest temperatures? ANSWER: 7/16/98, East Long Lake, 0.5
+NTL.phys.data.temp.descending <- arrange(NTL.phys.data, desc(temperature_C))
 
 
 ```
@@ -137,7 +163,8 @@ Selecting allows us to choose certain columns (variables) in our dataset.
 
 ```{r}
 NTL.phys.data.temps <- select(NTL.phys.data, lakename, sampledate:temperature_C)
-
+# We're creating a table that shows the lakename column, and the columns between and including date and temp
+# Only use commas and colons to select columns; we can't use & or other functions from filter (i.e. it has more limited syntax than filter does)
 ```
 ### Mutate
 
@@ -146,6 +173,8 @@ Mutating allows us to add new columns that are functions of existing columns. Op
 ```{r}
 
 NTL.phys.data.temps <- mutate(NTL.phys.data.temps, temperature_F = (temperature_C*9/5) + 32)
+
+# This code is adding a column named temperature_F, and it's equal to the equation to convert C to F, using the value from column temp_C
 
 ```
 ### Pipes
@@ -160,6 +189,8 @@ NTL.phys.data.processed <-
   filter(lakename == "Paul Lake" | lakename == "Peter Lake") %>%
   select(lakename, sampledate:temperature_C) %>%
   mutate(temperature_F = (temperature_C*9/5) + 32)
+
+# There's no need to include the dataframe name for each command within the pipes command (reiterated directly below)
   
 ```
 
@@ -169,8 +200,13 @@ Notice that we did not place the dataset name inside the wrangling function but 
 
 ```{r}
 write.csv(NTL.phys.data.PeterPaul1, row.names = FALSE, file = "./Data/Processed/NTL-LTER_Lake_ChemistryPhysics_PeterPaul_Processed.csv")
+
+# Row names = FALSE excludes the first column, which is just a count of the rows
+# one . before /Data is going down one folder
+
 ```
 
 ## CLOSING DISCUSSION
 How did data wrangling help us to generate a processed dataset? How does this impact our ability to analyze and answer questions about our data?
 
+> ANSWER: 
