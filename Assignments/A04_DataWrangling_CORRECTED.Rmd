@@ -1,6 +1,6 @@
 ---
 title: "Assignment 4: Data Wrangling"
-author: "Student Name"
+author: Jake Greif
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -34,8 +34,33 @@ The completed exercise is due on Thursday, 7 February, 2019 before class begins.
 
 ```{r}
 #1
+getwd()
+library(tidyverse)
+EPAair_O3_17 <- read.csv("../Data/Raw/EPAair_O3_NC2017_raw.csv")
+EPAair_O3_18 <- read.csv("../Data/Raw/EPAair_O3_NC2018_raw.csv")
+EPAair_PM_17 <- read.csv("../Data/Raw/EPAair_PM25_NC2017_raw.csv")
+EPAair_PM_18 <- read.csv("../Data/Raw/EPAair_PM25_NC2018_raw.csv")
 
 #2
+colnames(EPAair_O3_17)
+summary(EPAair_O3_17)
+dim(EPAair_O3_17)
+class(EPAair_O3_17$Date)
+
+colnames(EPAair_O3_18)
+summary(EPAair_O3_18)
+dim(EPAair_O3_18)
+class(EPAair_O3_18$Date)
+
+colnames(EPAair_PM_17)
+summary(EPAair_PM_17)
+dim(EPAair_PM_17)
+class(EPAair_PM_17$Date)
+
+colnames(EPAair_PM_18)
+summary(EPAair_PM_18)
+dim(EPAair_PM_18)
+class(EPAair_PM_18$Date)
 ```
 
 ## Wrangle individual datasets to create processed files.
@@ -46,12 +71,39 @@ The completed exercise is due on Thursday, 7 February, 2019 before class begins.
 
 ```{r}
 #3
+EPAair_O3_17$Date <- as.Date(EPAair_O3_17$Date, format = "%m/%d/%y")
+EPAair_O3_18$Date <- as.Date(EPAair_O3_18$Date, format = "%m/%d/%y")
+EPAair_PM_17$Date <- as.Date(EPAair_PM_17$Date, format = "%m/%d/%y")
+EPAair_PM_18$Date <- as.Date(EPAair_PM_18$Date, format = "%m/%d/%y")
+
+class(EPAair_O3_17$Date)
+class(EPAair_O3_18$Date)
+class(EPAair_PM_17$Date)
+class(EPAair_PM_18$Date)
 
 #4
+EPAair_O3_17.skinny <- select(EPAair_O3_17, Date, DAILY_AQI_VALUE, Site.Name, 
+                              AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+EPAair_O3_18.skinny <- select(EPAair_O3_18, Date, DAILY_AQI_VALUE, Site.Name,
+                              AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+EPAair_PM_17.skinny <- select(EPAair_PM_17, Date, DAILY_AQI_VALUE, Site.Name, 
+                              AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+EPAair_PM_18.skinny <- select(EPAair_PM_18, Date, DAILY_AQI_VALUE, Site.Name, 
+                              AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
 
 #5
+EPAair_PM_17.skinny <- mutate(EPAair_PM_17.skinny, AQS_PARAMETER_DESC = "PM2.5")
+EPAair_PM_18.skinny <- mutate(EPAair_PM_18.skinny, AQS_PARAMETER_DESC = "PM2.5")
 
 #6
+write.csv(EPAair_O3_17.skinny, row.names = FALSE, 
+          file ="../Data/Processed/EPAair_O3_NC2017_Processed.csv")
+write.csv(EPAair_O3_18.skinny, row.names = FALSE, 
+          file ="../Data/Processed/EPAair_O3_NC2018_Processed.csv")
+write.csv(EPAair_PM_17.skinny, row.names = FALSE, 
+          file ="../Data/Processed/EPAair_PM25_NC2017_Processed.csv")
+write.csv(EPAair_PM_18.skinny, row.names = FALSE, 
+          file ="../Data/Processed/EPAair_PM25_NC2018_Processed.csv")
 
 ```
 
@@ -68,14 +120,27 @@ The completed exercise is due on Thursday, 7 February, 2019 before class begins.
 11. Save your processed dataset with the following file name: "EPAair_O3_PM25_NC1718_Processed.csv"
 
 ```{r}
-#8
+#7
+EPAair.Combined <- rbind(EPAair_O3_17.skinny, EPAair_O3_18.skinny, 
+                         EPAair_PM_17.skinny, EPAair_PM_18.skinny)
 
+#8
+ library(lubridate)
+
+EPAair.summary <- EPAair.Combined %>%
+  filter(Site.Name == "Blackstone" | Site.Name == "Bryson City" | Site.Name == "Triple Oak") %>%
+  mutate(Month = month(Date), Year = year(Date))
+
+dim(EPAair.summary)
 #9
+EPAair.summary.spread <- spread(EPAair.summary, AQS_PARAMETER_DESC, DAILY_AQI_VALUE)
 
 #10
+dim(EPAair.summary.spread)
 
 #11
-
+write.csv(EPAair.summary.spread, row.names = FALSE, 
+          file = "../Data/Processed/EPAair_O3_PM25_NC1718_Processed.csv")
 ```
 
 
@@ -87,10 +152,25 @@ b. A summary table of the mean, minimum, and maximum AQI values of O3 and PM2.5 
 
 ```{r}
 #12a
+Mean.AQI.summary <-
+  EPAair.summary.spread %>%
+  group_by(Month) %>%
+  summarise(meanO3 = mean(Ozone, na.rm = TRUE),
+            meanPM = mean(PM2.5, na.rm = TRUE))
 
 #12b
-
+AQI.summary <-
+  EPAair.summary.spread %>%
+  group_by(Site.Name) %>%
+  summarise(meanO3 = mean(Ozone, na.rm = TRUE),
+            minO3 = min(Ozone, na.rm = TRUE),
+            maxO3 = max(Ozone, na.rm = TRUE),
+            meanPM = mean(PM2.5, na.rm = TRUE),
+            minPM = min(PM2.5, na.rm = TRUE),
+            maxPM = max(PM2.5, na.rm = TRUE))
+ 
 #13
-
+View(Mean.AQI.summary)
+View(AQI.summary)
 ```
 
