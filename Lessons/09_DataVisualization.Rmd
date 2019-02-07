@@ -21,8 +21,9 @@ library(tidyverse)
 
 PeterPaul.chem.nutrients <- read.csv("./Data/Processed/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv")
 PeterPaul.nutrients.gathered <- read.csv("./Data/Processed/NTL-LTER_Lake_Nutrients_PeterPaulGathered_Processed.csv")
-PeterPaul.chem.nutrients.summaries <- read.csv("./Data/Processed/NTL-LTER_Lake_Summaries_PeterPaul_Processed.csv")
+PeterPaul.chem.nutrients.summaries <- read_csv("./Data/Processed/NTL-LTER_Lake_Summaries_PeterPaul_Processed.csv")
 EPAair <- read.csv("./Data/Processed/EPAair_O3PM25_3sites1718_processed.csv")
+dim(EPAair)
 
 EPAair$Date <- as.Date(EPAair$Date, format = "%Y-%m-%d")
 PeterPaul.chem.nutrients$sampledate <- as.Date(PeterPaul.chem.nutrients$sampledate, format = "%Y-%m-%d")
@@ -71,21 +72,29 @@ Here are some commonly used aesthetic types that can be manipulated in ggplot:
 # Scatterplot
 ggplot(EPAair, aes(x = Date, y = Ozone)) + 
   geom_point()
+# geom_point creates a scatter plot
 
 O3plot <- ggplot(EPAair) +
   geom_point(aes(x = Date, y = Ozone))
 print(O3plot)
+# print() allows us to see the plot
 
 # Fix this code
 O3plot2 <- ggplot(EPAair) +
-  geom_point(aes(x = Date, y = Ozone, color = "blue"))
+# geom_point(aes(x = Date, y = Ozone, color = "blue"))
+  geom_point(aes(x = Date, y = Ozone), color = "blue")
 print(O3plot2)
+# We can't change the color within our asthetics function, we need to put it outside (commented out section was the original code)
 
 # Add additional variables
 PMplot <- 
   ggplot(EPAair, aes(x = month, y = PM2.5, shape = as.factor(year), color = Site.Name)) +
   geom_point()
 print(PMplot)
+# Colors can be defined based on a variable from our dataframe (in this case Site.Name) 
+# as.factor() changes the integer to a binary type factor
+# B/c were coloring based on site name, it is placed inside the aes(), not outside like when we're defining specific colors
+# If we want to make month more normal, we have to change the class (to what though?)
 
 # Separate plot with facets
 PMplot.faceted <-
@@ -93,12 +102,15 @@ PMplot.faceted <-
   geom_point() +
   facet_wrap(vars(Site.Name), nrow = 3)
 print(PMplot.faceted)
+# facet_wrap splits the graph based on Site.Name and arranges the graphs in 3 rows
 
 PMplot.faceted2 <-
   ggplot(EPAair, aes(x = month, y = PM2.5)) +
   geom_point() +
   facet_grid(Site.Name ~ year)
 print(PMplot.faceted2)
+# ~ means by, so it sorts the graphs split by Site.Name by year
+# Order does matter, if we did year by Site.Name, then the output would be flipped
 
 # Filter dataset within plot building
 O3plot.Blackstone <- 
@@ -110,14 +122,23 @@ print(O3plot.Blackstone)
 # Exercise: build your own scatterplots of PeterPaul.chem.nutrients
 
 # 1. 
-# Plot surface temperatures by day of  year. 
-# Color your points by year, and facet by lake in two rows.
+# Plot surface temperatures by day of year. 
+ggplot(PeterPaul.chem.nutrients, depth = 0.00, aes(x = daynum, y = temperature_C, color = year4)) +
+  geom_point()
 
+# Color your points by year, and facet by lake in two rows.
+ggplot(PeterPaul.chem.nutrients, depth = 0.00, aes(x = daynum, y = temperature_C, color = year4)) +
+  geom_point() +
+  facet_wrap(vars(lakename), nrow = 2)
 
 #2. 
 # Plot temperature by date. Color your points by depth.
-# Change the size of your point to 0.5
+ggplot(PeterPaul.chem.nutrients, aes(x = sampledate, y = temperature_C, color = depth)) +
+  geom_point()
 
+# Change the size of your point to 0.5
+ggplot(PeterPaul.chem.nutrients, aes(x = sampledate, y = temperature_C, color = depth)) +
+  geom_point(size = 0.5)
 
 ```
 ### Plotting the relationship between two continuous variables: Scatterplot
@@ -128,6 +149,7 @@ lightvsDO <-
   ggplot(PeterPaul.chem.nutrients, aes(x = irradianceWater, y = dissolvedOxygen)) +
   geom_point()
 print(lightvsDO)
+# We've got some crazy outliers, so we need to adjust our axes to zoom into the area of interest
 
 # Adjust axes
 lightvsDOfixed <- 
@@ -136,14 +158,16 @@ lightvsDOfixed <-
   xlim(0, 250) +
   ylim(0, 20)
 print(lightvsDOfixed)
+# x and y lim() zoomed to the clustered area. We see from this plot that DO is more variable with less light (deeper water). DO is closer to zero between 0-50 irradiance
 
 # Depth in the fields of limnology and oceanography is on a reverse scale
 tempvsdepth <- 
-  ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth)) +
-  #ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth, color = daynum)) +
+  #ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth)) +
+  ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth, color = daynum)) +
   geom_point() +
   scale_y_reverse()
 print(tempvsdepth)
+# scale_y_reverse is super helpful here for making the graph easier to read (depth values reversed)
 
 NvsP <-
   ggplot(PeterPaul.chem.nutrients, aes(x = tp_ug, y = tn_ug, color = depth)) +
