@@ -171,18 +171,29 @@ print(tempvsdepth)
 
 NvsP <-
   ggplot(PeterPaul.chem.nutrients, aes(x = tp_ug, y = tn_ug, color = depth)) +
-  geom_point() #+
-  #geom_smooth(method = lm) +
-  #geom_abline(aes(slope = 16, intercept = 0))
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_abline(aes(slope = 16, intercept = 0), lty = 2)
 print(NvsP)
+# Gray points in the output are measurements that don't have an associated depth value
+# geom_smooth creates a line with the lease amount of error with the dataset (line of best fit), but to get a linear fit, we need to specify that the method is a linear model. It also includes a 95% confidence interval, saying that 95% of the points follow that line.
+# geom_abline allows you to draw a linear line with any specifications we want. Here, we're telling it make a line with a slope of 16. If we expect the ratio of N to P to be 16 to 1, we can use this to confirm our assumptions. To make it a dotted line, include lty = 2 (lty means line type)
 
 # Exercise: Plot relationships between air quality measurements
 
 # 1. 
 # Plot AQI values for ozone by PM2.5, colored by site. 
-# Add a line of best fit for the linear regression of these variables.
+O3vsPM <-
+  ggplot(EPAair, aes(x = PM2.5, y = Ozone, color = Site.Name)) +
+  geom_point()
+print(O3vsPM)
 
-  
+# Add a line of best fit for the linear regression of these variables.
+O3vsPM <-
+  ggplot(EPAair, aes(x = PM2.5, y = Ozone, color = Site.Name)) +
+  geom_point() +
+  geom_smooth(method = lm)
+print(O3vsPM)
 ```
 
 ### Plotting continuous vs. categorical variables
@@ -193,19 +204,25 @@ PeterPaul.nutrient.summaries <- PeterPaul.nutrients.gathered %>%
   group_by(lakename, nutrient) %>%
   summarise(sd = sd(concentration), 
             mean = mean(concentration))
+# To group by multiple factors, they need to be in the same function. (Doing them in seperate functions will just overwrite the first one)
 
 Nutrientplot <- 
   ggplot(PeterPaul.nutrients.gathered) +
-  geom_bar(aes(x = lakename, y = concentration, fill = as.factor(nutrient)), # why did we use fill?
+  geom_bar(aes(x = lakename, y = concentration, fill = nutrient), # why did we use fill?
            position = "dodge", stat = "summary", fun.y = "mean")             # what's happening here?
 print(Nutrientplot)
+# We use fill because if we just use color, it will color the border of the bars and leave the inside gray.
+# position e dodge seperates the columns vs. stacking the columns
 
 Nutrientplot2 <- 
-  ggplot(PeterPaul.nutrient.summaries, aes(x = lakename, y = mean, fill = as.factor(nutrient))) + #
+  ggplot(PeterPaul.nutrient.summaries, aes(x = lakename, y = mean, fill = nutrient)) + #
   geom_bar(stat = "identity", position = "dodge") + # what does the stat command do?
   geom_errorbar(aes(ymin = mean-sd, ymax = mean+sd), # how do we specify error bars?
                  position = "dodge")
 print(Nutrientplot2)
+# stat = identity tells it to just take the value in the cell for the y value (mean). We use this because we already summarized the data
+# geom_errorbar- we need to have mean and sd columns in our dataset to do this calculation
+# This is a bad way to represent our data because the error bars are huge, and they go below 0 (negative concentrations). Moreover, science is trending away from error bars
 
 # Are there more effective ways to produce summary stats for categories?
 
@@ -214,6 +231,8 @@ Nutrientplot3 <-
   ggplot(PeterPaul.nutrients.gathered, aes(x = lakename, y = concentration)) +
   geom_boxplot(aes(color = nutrient)) # Why didn't we use "fill"?
 print(Nutrientplot3)
+# Didn't use fill so we can see the mean bar
+# This does a better job of displaying the distribution of points while still communicating the means and such
 
 # Dot plot
 Nutrientplot4 <-
@@ -221,12 +240,14 @@ Nutrientplot4 <-
   geom_dotplot(aes(color = nutrient), binaxis = "y", binwidth = 1, 
                stackdir = "center", position = "dodge") #
 print(Nutrientplot4)
+# Dot plot places measurements of the same value next to each other, so wide parts of the plot show value where most readings are
 
 # Violin plot
 Nutrientplot5 <-
   ggplot(PeterPaul.nutrients.gathered, aes(x = lakename, y = concentration)) +
   geom_violin(aes(color = nutrient)) #
 print(Nutrientplot5)
+# Super similar to a dot plot, but it uses polygons instead of dots
 
 # Frequency polygons
 # Using a tidy dataset
@@ -250,9 +271,19 @@ print(Nutrientplot7)
 # 1. 
 # Create a bar chart plus standard deviation error bars for PM2.5, divided by year. 
 # Create separate bars for each site. 
-
+EPAair.plot1 <-
+  ggplot(EPAair) +
+  geom_bar(aes(x = year, y = PM2.5, fill = Site.Name),
+           position = "dodge", stat = "summary", fun.y = "mean") +
+  geom_errorbar(aes(ymin = (mean(PM2.5) - sd(PM2.5))), ymax = (mean(PM2.5) + sd(PM2.5)))
+print(EPAair.plot1)
+# This was done correctly, however to include error bars, we need to summarize the data
+  
 # 2. 
 # Create a new plot that better depicts the distribution of PM2.5 concentrations. 
 # Divide your graph by year and site.
-
+EPAair.plot2 <-
+  ggplot(EPAair, aes(x = year, y = PM2.5)) +
+  geom_boxplot(aes(color = Site.Name))
+print(EPAair.plot2)
 ```
