@@ -172,8 +172,8 @@ print(tempvsdepth)
 NvsP <-
   ggplot(PeterPaul.chem.nutrients, aes(x = tp_ug, y = tn_ug, color = depth)) +
   geom_point() +
-  geom_smooth(method = lm) +
-  geom_abline(aes(slope = 16, intercept = 0), lty = 2)
+  geom_smooth(method = lm) #+
+  #geom_abline(aes(slope = 16, intercept = 0), lty = 2)
 print(NvsP)
 # Gray points in the output are measurements that don't have an associated depth value
 # geom_smooth creates a line with the lease amount of error with the dataset (line of best fit), but to get a linear fit, we need to specify that the method is a linear model. It also includes a 95% confidence interval, saying that 95% of the points follow that line.

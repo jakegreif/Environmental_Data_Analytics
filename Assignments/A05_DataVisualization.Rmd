@@ -1,6 +1,6 @@
 ---
 title: "Assignment 5: Data Visualization"
-author: "Student Name"
+author: Jake Greif
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -34,14 +34,40 @@ The completed exercise is due on Thursday, 14 February, 2019 before class begins
 
 ```{r}
 #1
+getwd()
+library(ggplot2)
+library(tidyverse)
+
+PP.gather <- read.csv("./Data/Processed/NTL-LTER_Lake_Nutrients_PeterPaulGathered_Processed.csv")
+PP.tidy <- read.csv("./Data/Processed/NTL-LTER_Lake_Nutrients_PeterPaul_Processed.csv")
+USGS.stream.raw <- read.csv("./Data/Raw/USGS_Site02085000_Flow_Raw.csv")
+ecotox.raw <- read.csv("./Data/Raw/ECOTOX_Neonicotinoids_Mortality_raw.csv")
 
 #2
+
+PP.gather$sampledate <- as.Date(PP.gather$sampledate, format = "%Y-%m-%d")
+class(PP.gather$sampledate)
+
+PP.tidy$sampledate <- as.Date(PP.tidy$sampledate, format = "%Y-%m-%d")
+class(PP.tidy$sampledate)
+
+USGS.stream.raw$datetime <- as.Date(USGS.stream.raw$datetime, format = "%m/%d/%y")
+USGS.stream.raw$datetime <- as.Date(ifelse(USGS.stream.raw$datetime >
+    Sys.Date(),
+    format(USGS.stream.raw$datetime, "19%y-%m-%d"),
+    format(USGS.stream.raw$datetime)))
+class(USGS.stream.raw$datetime)
+
 ```
 ## Define your theme
 3. Build a theme and set it as your default theme.
 
 ```{r}
 #3
+mytheme <- theme_bw(base_size = 14) +
+  theme(strip.background = element_rect(fill = "white"))
+
+theme_set(mytheme)
 
 ```
 
@@ -54,6 +80,13 @@ Hint: a good way to build graphs is to make them ugly first and then create more
 
 ```{r}
 #4
+PP_PObyP <- ggplot(PP.tidy) +
+  geom_point(aes(x = tp_ug, y = po4, color = lakename)) +
+  scale_color_manual(values = c("Blue","Red")) +
+  geom_smooth(aes(x = tp_ug, y = po4), method = lm, color = "Black") +
+  xlim(0,150) +
+  ylim(0,50)
+print(PP_PObyP)
 
 ```
 
@@ -62,6 +95,15 @@ Hint: a good way to build graphs is to make them ugly first and then create more
 
 ```{r}
 #5
+Peter_nut <- ggplot(PP.gather, lakename = "Peter Lake",
+             aes(x = sampledate, y = concentration)) +
+  geom_point(aes(shape = nutrient, color = depth)) +
+  theme(legend.position = "right") +
+  facet_grid("Peter Lake" ~ nutrient) +
+  scale_x_date(limits = as.Date(c("1991-05-01", "2016-08-31")), 
+    date_breaks = "6 years", date_labels = "%y")
+             
+print(Peter_nut)
 
 ```
 
@@ -70,17 +112,41 @@ Hint: a good way to build graphs is to make them ugly first and then create more
 
 ```{r}
 #6
+library(gridExtra)
 
+colnames(USGS.stream.raw) <- c("agency_cd", "site_no", "datetime",
+                               "discharge.max")
+USGS_dis_point <- ggplot(USGS.stream.raw, aes(x = datetime, y = discharge.max)) +
+  geom_point() +
+  geom_smooth() +
+  ylim(0,1500) +
+  labs(x = "Year", y = "Discharge (cfs)")
+print(USGS_dis_point)
+
+USGS_dis_lin <- ggplot(USGS.stream.raw, aes(x = datetime, y = discharge.max)) +
+  geom_line() +
+  ylim(0,1500) +
+  labs(x = "Year", y = "Discharge (cfs)")
+print(USGS_dis_lin)
+
+grid.arrange(USGS_dis_point, USGS_dis_lin)
 ```
 Question: How do these two types of lines affect your interpretation of the data?
 
-> Answer:
+> Answer: The data is generally difficult to read when the nearly 100 year period is plotted using either method. However, using geom_smooth allows us to see the general trends of discharge (i.e. periods when discharge is increasing or descreasing). The plot made using geom_line is difficult to read and makes the data difficult to interpret without using any other methods of visualizing the data.
 
 7. [ECOTOX Neonicotinoids] Plot the concentration, divided by chemical name. Choose a geom that accurately portrays the distribution of data points.
 
 ```{r}
 #7 
+ecotox.raw.filter <- filter(ecotox.raw, Conc..Units..Std. == "AI mg/L")
 
+ecotox_plot <- ggplot(ecotox.raw.filter, aes(x = Chemical.Name, y = Conc..Mean..Std.)) +
+  geom_boxplot(aes(fill = Chemical.Name)) +
+  ylim(0,100) +
+  labs(x = "Chemical", y = "Concentration (mg/L)") +
+  theme(axis.text.x = (element_blank()))
+print(ecotox_plot)
 ```
 
 
