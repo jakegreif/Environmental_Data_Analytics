@@ -32,6 +32,8 @@ PeterPaul.nutrients <- filter(PeterPaul.nutrients, depth_id > 0)
 # set depth_id to factor
 PeterPaul.nutrients$depth_id <- as.factor(PeterPaul.nutrients$depth_id)
 
+# removing negatives and set depth_id to factor is just prepping the data to answer a question later on
+
 mytheme <- theme_classic(base_size = 14) +
   theme(axis.text = element_text(color = "black"), 
         legend.position = "top")
@@ -74,17 +76,21 @@ summary(EPAair$Ozone)
 
 # Evaluate assumption of normal distribution
 shapiro.test(EPAair$Ozone)
+# This simply tests the assumption that our data approximate a normal distribution. We know that our assumption is wrong because our p value is super low
+
 ggplot(EPAair, aes(x = Ozone)) +
   geom_histogram(stat = "count")
 qqnorm(EPAair$Ozone); qqline(EPAair$Ozone)
+# This shows us graphically how well our data follows the normal distribution. The closer our points are to the line, the more it follows the normal distribution
 
 O3.onesample <- t.test(EPAair$Ozone, mu = 50, alternative = "less")
 O3.onesample
+# This runs a t test, setting our alternative hypothesis as O3 is less than 50
 ```
 
 What information does the output give us? How might we report this information in a report?
 
-> ANWSER:
+> ANWSER: It gives us our t value, and we might report our t statistic, degrees of freedom, and our confidence interval. We're 95% confident that the average is less than 50 (Proper reporting: Ozone AQI values in 2017-18 were significantly lower than 50 (one sample t-test; t = -41.9, df = 184, p < 0.0001)) 
 
 ### Two-sample t-test
 The two-sample *t* test is used to test the hypothesis that the mean of two samples is equivalent. Unlike the one-sample tests, a two-sample test requires a second assumption that the variance of the two groups is equivalent. Are Ozone levels different between Blackstone and Bryson City?
@@ -105,6 +111,7 @@ O3.twosample$p.value
 # Format as a GLM
 O3.twosample2 <- lm(EPAair$Ozone ~ EPAair$Site.Name)
 summary(O3.twosample2)
+# The output here is a bit confusing, but the second row of coefficients tells us the stats for Bryson, and the first row is stats for Blackstone. Under estimate, Bryson is 3.3 less than Blackstone
 ```
 ### Non-parametric equivalent of t-test: Wilcoxon test
 
@@ -115,6 +122,7 @@ O3.onesample.wilcox <- wilcox.test(EPAair$Ozone, mu = 50, alternative = "less")
 O3.onesample.wilcox
 O3.twosample.wilcox <- wilcox.test(EPAair$Ozone ~ EPAair$Site.Name)
 O3.twosample.wilcox
+# This gives you less information than a t-test. If the data is really not following the normal, then this might be better to use (b/c it's non-parametric)
 ```
 
 ### One-way ANOVA
@@ -131,6 +139,7 @@ ggplot(EPAair, aes(x = PM2.5, color = Site.Name)) +
 qqnorm(EPAair$PM2.5); qqline(EPAair$PM2.5)
 
 bartlett.test(EPAair$PM2.5 ~ EPAair$Site.Name)
+# Use this if were testing more than 2 populations. It tells us about the variance between populations
 
 # Format as a GLM
 PM2.5.anova <- lm(EPAair$PM2.5 ~ EPAair$Site.Name)
@@ -142,6 +151,7 @@ summary(PM2.5.anova2)
 
 # Run a post-hoc test for pairwise differences
 TukeyHSD(PM2.5.anova2)
+# Run this if you use aov instead of lm. This shows us stats for all of the permutations relating one population to another
 
 # Plot the results
 # How might you edit this graph to make it attractive?
@@ -152,7 +162,7 @@ print(PM2.5.anova.plot)
 ```
 What information does the output give us? How might we report this information in a report?
 
-> ANSWER:
+> ANSWER: We could indicate which sites are significantly different by placing a star next to the significant sites on the graph. REPORT: (ANOVA; F = 16.16, df = 1898, p < 0.0001)
 
 ### Non-parametric equivalent of ANOVA: Kruskal-Wallis Test
 As with the Wilcoxon test, the Kruskal-Wallis test is the non-parametric counterpart to the one-way ANOVA. Here, the data from two or more independent samples are replaced with their ranks without regard to the grouping AND based on the between-group sum of squares calculations. 
@@ -169,6 +179,8 @@ PM2.5.kw
 # dunn.test(EPAair$PM2.5, EPAair$Site.Name, kw = T, 
 #           table = F, list = T, method = "holm", altp = T)   #From package dunn.test
 # dunnTest(EPAair$PM2.5, EPAair$Site.Name)                    #From package FSA
+
+# Requires installation of packages
 ```
 
 ## TWO-WAY ANOVA
@@ -178,6 +190,7 @@ A two-way ANOVA allows us to examine the effects of two categorical explanatory 
 ```{r}
 TNanova.main <- lm(PeterPaul.nutrients$tn_ug ~ PeterPaul.nutrients$lakename + PeterPaul.nutrients$depth_id)
 summary(TNanova.main)
+# 
 
 TNanova.main2 <- aov(PeterPaul.nutrients$tn_ug ~ PeterPaul.nutrients$lakename + PeterPaul.nutrients$depth_id)
 summary(TNanova.main2)
@@ -200,6 +213,7 @@ The output gives test statistics for each explanatory variable as well as the in
 ```{r}
 TNanova.interaction <- aov(PeterPaul.nutrients$tn_ug ~ PeterPaul.nutrients$lakename * PeterPaul.nutrients$depth_id)
 summary(TNanova.interaction)
+# This is combining the 2 variables and comparing the combinations
 
 ```
 
