@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6: Generalized Linear Models"
-author: "Student Name"
+author: Jake Greif
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -34,9 +34,22 @@ The completed exercise is due on Tuesday, 26 February, 2019 before class begins.
 
 ```{r}
 #1
+getwd()
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+ecotox.raw <- read.csv("./Data/Raw/ECOTOX_Neonicotinoids_Mortality_raw.csv")
+NTL.chem.phys.raw <- read.csv("./Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
+
+NTL.chem.phys.raw$daynum <- as.numeric(NTL.chem.phys.raw$daynum)
+class(NTL.chem.phys.raw$daynum)
 
 #2
+mytheme <- theme_bw(base_size = 14) +
+  theme(strip.background = element_rect(fill = "white"))
 
+theme_set(mytheme)
 ```
 
 ## Neonicotinoids test
@@ -50,31 +63,46 @@ Research question: Were studies on various neonicotinoid chemicals conducted in 
 
 ```{r}
 #3
+as.data.frame(table(ecotox.raw$Chemical.Name))
 
 #4
+shapiro.test(ecotox.raw$Pub..Year)
+
+ecotox.pubyr.chem <- ggplot(ecotox.raw, aes(x = Pub..Year)) +
+  geom_bar() +
+  facet_wrap("Chemical.Name") +
+  scale_x_continuous(breaks = c(1990,2010))
+print(ecotox.pubyr.chem)
 
 #5
+bartlett.test(ecotox.raw$Pub..Year ~ ecotox.raw$Chemical.Name)
 
 ```
 
 6. Based on your results, which test would you choose to run to answer your research question?
 
-> ANSWER: 
+> ANSWER: Based on the results, I would run a Kruskal-Wallis Test to answer the research question.
 
 7. Run this test below. 
 
 8. Generate a boxplot representing the range of publication years for each chemical. Adjust your graph to make it pretty.
 ```{r}
 #7
+Pub.yr.kw <- kruskal.test(ecotox.raw$Pub..Year ~ ecotox.raw$Chemical.Name)
+Pub.yr.kw
 
 #8
-
+ecotox.pubyr.chem.box <- ggplot(ecotox.raw) +
+  geom_boxplot(aes(x = Chemical.Name, y = Pub..Year)) +
+  labs(x = "Chemical Name", y = "Publication Year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(ecotox.pubyr.chem.box)
 ```
 
 
 9. How would you summarize the conclusion of your analysis? Include a sentence summarizing your findings and include the results of your test in parentheses at the end of the sentence. 
 
-> ANSWER: 
+> ANSWER: Based on the results of the Kruskal Wallis Test, studies on some of the different neonicotinoids chemicals were not conducted in the same years. (Kruskal-Wallis; Chi-squared = 134.15, DF = 8, p < 0.0001)
 
 ## NTL-LTER test
 Research question: What is the best set of predictors for lake temperatures in July across the monitoring period at the North Temperate Lakes LTER? 
@@ -89,30 +117,48 @@ Research question: What is the best set of predictors for lake temperatures in J
 
 ```{r}
 #11
+NTL.chem.phys.Tidy <- 
+  NTL.chem.phys.raw %>%
+  filter(daynum >= 182 & daynum <= 213) %>%
+  select(lakename, year4, daynum, depth, temperature_C) %>%
+  filter(!is.na(temperature_C))
+View(NTL.chem.phys.Tidy)
+
 
 #12
+TempAIC <- lm(data = NTL.chem.phys.Tidy, temperature_C ~ year4 + daynum + depth)
+step(TempAIC)
+
+TempRegression <- lm(data = NTL.chem.phys.Tidy, temperature_C ~ year4 + daynum + depth)
+summary(TempRegression)
 
 ```
 
 13. What is the final linear equation to predict temperature from your multiple regression? How much of the observed variance does this model explain?
 
-> ANSWER: 
+> ANSWER: Temp = -14.33 + 0.01 + 0.04 - 1.94 + Error. This model explains ~ 74% of the observed variance.
 
 14. Run an interaction effects ANCOVA to predict temperature based on depth and lakename from the same wrangled dataset.
 
 ```{r}
 #14
-
+TempInteraction <- lm(data = NTL.chem.phys.Tidy, temperature_C ~ depth * lakename)
+summary(TempInteraction)
 ```
 
 15. Is there an interaction between depth and lakename? How much variance in the temperature observations does this explain?
 
-> ANSWER: 
+> ANSWER: There is an interaction between depth and lakename, which explains 78.55% of the variance in temperature observations.
 
 16. Create a graph that depicts temperature by depth, with a separate color for each lake. Add a geom_smooth (method = "lm", se = FALSE) for each lake. Make your points 50 % transparent. Adjust your y axis limits to go from 0 to 35 degrees. Clean up your graph to make it pretty. 
 
 ```{r}
 #16
-
+TempPlot <- ggplot(NTL.chem.phys.Tidy, aes(x = depth, y = temperature_C, color = lakename)) + 
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  ylim(0,35) +
+  labs(x = "Depth (m)", y = "Temperature (C)")
+print(TempPlot)
 ```
 
