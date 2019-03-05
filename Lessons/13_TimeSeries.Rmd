@@ -69,12 +69,13 @@ Let's wrangle our data and visualize a preliminary relationship between our vari
 ```{r}
 PeterPaul.summertemp <- 
   PeterPaul.chem %>%
+  #select columns lakename through temp
   select(lakename:temperature_C) %>%
   #filter for Julian days in June-August and surface measurements
   filter(daynum > 151 & daynum < 243 & depth == 0 ) %>%
-  #add a "week" column to represent seasonality
+  #add a "week" column to represent seasonality (week() function is from lubridate)
   mutate(Week = week(sampledate)) %>%
-  #code won't work if there are NAs
+  #autocorrelation code (further down) won't work if there are NAs
   na.exclude()
 
 ggplot(PeterPaul.summertemp, aes(x = sampledate, y = temperature_C, color = lakename)) +
@@ -89,10 +90,14 @@ Next, we will determine the degree of temporal autocorrelation in our dataset. W
 TempTest.auto <- lme(data = PeterPaul.summertemp,
                      temperature_C ~ sampledate * lakename, 
                      random = ~1|Week)
+# take dataset we just made
+# (Fixed effects model w/ interaction term) predict temp based on sample date and lake
+# specify that our random variable is week
 TempTest.auto
+# Output gives us the variability of temperature (1.5 degrees) across weeks
 
 ACF(TempTest.auto)
-
+# This tells us that 42% of the variability in our data is explained by the variable of weeks
 ```
 This model structure should look familiar, with a typical linear model structure and dataframe defined. The addition here is that we have defined Week as a random variable. Essentially, we are interested not in the specific effects of each week but in the variability among weeks, so we have defined it as a random effect (essentially coming from a larger distribution of seasonal variability). The ~1 statement indicates that each week has its own intercept in the model. From here, we want to take the first order correlation to specify our autocorrelation structure. From the ACF output, we take the 2nd value (the innermost group level) to define the degree of autocorrelation. This number will always fall between 0 and 1. Notice that there is a fairly large degree of autocorrelation in our variables.
 
@@ -107,19 +112,23 @@ TempTest.mixed <- lme(data = PeterPaul.summertemp,
                      #specify autocorrelation structure of order 1
                      #sampledate is duplicated in some cases, so need to split up by lake
                      correlation = corAR1(form = ~ sampledate/lakename|Week, value = 0.423),
+                     #time variable|random effect
                      #define method as restricted maximum likelihood
                      method = "REML")
 summary(TempTest.mixed)
+# Output: First line tells us that the temp. in week 1 at Paul Lake is 20.47 degrees
+# Second line tells us that temp in Paul Lake increases by 0.0001 degree each week
 
 # Compare the random effects model with the fixed effects model
 TempTest.fixed <- gls(data = PeterPaul.summertemp,
                       temperature_C ~ sampledate * lakename, 
                       method = "REML")
 summary(TempTest.fixed)
+# fixed effect may be better to use if you have a small sample size or 
 
 anova(TempTest.mixed, TempTest.fixed)
 # The lower the AIC, the better.
-# The p-value tells us whether those models have a significantly different fit
+# The p-value tells us that those models have a significantly different fit
 
 # Post-hoc test
 # This will yield groupings of temperature by lake for the average date value
@@ -130,6 +139,7 @@ cld(TempTest.posthoc, alpha = 0.05, Letters = letters, adjust = "tukey")
 ggplot(PeterPaul.summertemp, aes(x = sampledate, y = temperature_C, color = lakename)) +
   geom_point() +
   scale_color_manual(values = c("#7fcdbb", "#253494")) +
+  labs(x = 'Year', y = 'Temperature (C)') +
   geom_abline(intercept = 20.47, slope = 0.0001)
 ```
 
