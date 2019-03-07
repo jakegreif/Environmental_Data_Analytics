@@ -63,9 +63,9 @@ A Mann-Kendall test will analyze whether there is a monotonic trend in the respo
 # Wrangle our dataset
 PeterPaul.nutrients.surface <- 
   PeterPaul.nutrients %>%
-  select(-lakeid, -depth_id, -comments) %>%
+  select(-lakeid, -depth_id, -comments) %>%   #remove these (indicated by -)
   filter(depth == 0) %>%
-  filter(!is.na(tp_ug))
+  filter(!is.na(tp_ug))   #filter na's in total phosphorus
 
 # Initial visualization of data
 ggplot(PeterPaul.nutrients.surface, aes(x = sampledate, y = tp_ug, color = lakename)) + 
@@ -79,6 +79,8 @@ Paul.nutrients.surface <- filter(PeterPaul.nutrients.surface, lakename == "Paul 
 # Run a Mann-Kendall test
 mk.test(Peter.nutrients.surface$tp_ug)
 
+# Null hypothesis is that there is no trend over time (accept if p > 0.05)
+# z tells us the direction (+/-) and magnitude of our trend. Output here (4.4) tells us that there's a somewhat strong positive trend
 ```
 
 However, it looks like there might be a breakpoint in our dataset. Further, we know that Peter Lake underwent experimental fertilization starting in May 1993, a perturbation which we might expect to have induced a regime shift in the ecosystem. In this case, we might want to find out whether there is a breakpoint, or changepoint, in our dataset. 
@@ -88,6 +90,8 @@ Pettitt's test is also included in the `trend` package. This nonparametric test 
 ```{r}
 # Test for change point
 pettitt.test(Peter.nutrients.surface$tp_ug)
+# If p > 0.05, there is no change point 
+# Tells us the relative position in the dataset where the change occurs (output tells us row 35)
 
 # Run separate Mann-Kendall for each change point
 mk.test(Peter.nutrients.surface$tp_ug[1:34])
@@ -95,6 +99,7 @@ mk.test(Peter.nutrients.surface$tp_ug[35:132])
 
 # Is there a second change point?
 pettitt.test(Peter.nutrients.surface$tp_ug[35:132])
+# Output tells us change point is at position 79, so in our full dataset the second change point is in row 35+79 (=114)
 
 # Run another Mann-Kendall for the second change point
 mk.test(Peter.nutrients.surface$tp_ug[35:113])
@@ -107,8 +112,11 @@ pettitt.test(Paul.nutrients.surface$tp_ug)
 # Add vertical lines to the original graph to represent change points
 ggplot(PeterPaul.nutrients.surface, aes(x = sampledate, y = tp_ug, color = lakename)) + 
   geom_point() +
-  scale_color_manual(values = c("#7fcdbb", "#253494"))
-
+  scale_color_manual(values = c("#7fcdbb", "#253494")) +
+  geom_vline(xintercept = as.Date("1993/05/20"), color = "#253494", lty = 5) +
+  geom_vline(xintercept = as.Date("1998/01/01"), color = "#253494", lty = 5)
+# Notice that we have to tell ggplot to read the x values as date again
+# sometimes we need to supply the origin date, placing origin = "1970/01/01" after the as.Date part of the function
 ```
 ### Seasonal Mann-Kendall
 
@@ -123,7 +131,9 @@ USGS.flow.data.trimmed <- USGS.flow.data %>%
 
 # Visualize the data
 ggplot(USGS.flow.data.trimmed, aes(x = datetime, y = discharge.mean)) +
-  geom_point(size = 0.5, alpha = 0.5)
+  geom_point(size = 0.5, alpha = 0.5) +
+  scale_y_log10()
+# adjusting the y scale makes the data easier to visualize without adjusting our data
 ```
 
 ### Interpolation
@@ -139,7 +149,7 @@ Some situations may require us to predict values for data points that fall withi
 
 Question: Under what circumstances would you consider each of these options for interpolation? 
 
-> ANSWER: 
+> ANSWER: spline works a bit better when you know the mathematics behind your data vs linear. In environmental data from natural systems we don't really know the exact math behind it, so its usually best to use linear
 
 Tip: Check your dataset to see if there is an NA value in the first row. You may need to add a value for that first row or trim the dataset so that the new first row corresponds to the first measurement.
 
@@ -158,11 +168,13 @@ USGS.flow.data.interpolated$Date <- as.Date(USGS.flow.data.interpolated$Date,
 # Create a time series object
 USGS.flow.data.timeseries <- ts(USGS.flow.data.interpolated$Discharge, 
                                 start = c(2009, 1) ,frequency = 12)
+# seasonal man kendall can only use time series, so use the ts() function to make the dataframe a timeseries, starting at Jan. 2009, and setting the frequency to 12 (monthly)
 
 # Run a Seasonal Mann-Kendall test
 USGS.smktest <- smk.test(USGS.flow.data.timeseries)
 USGS.smktest
 summary(USGS.smktest)
+# summary gives us a list of trends by month
 ```
 
 Interpreting results of the Seasonal Mann-Kendall Test: 
