@@ -29,16 +29,52 @@ The completed exercise is due on Tuesday, 19 March, 2019 before class begins.
 
 ## Brainstorm a project topic
 1. Spend 15 minutes brainstorming ideas for a project topic, and look for a dataset if you are choosing your own rather than using a class dataset. Remember your topic choices are due by the end of March, and you should post your choice ASAP to the forum on Sakai.
+```{r}
+#stream.flow.explore <- read.csv("./Data/Raw/USGS_Site02085000_Flow_Raw.csv")
+#colnames(stream.flow.explore) <- c("agency_cd", "site_no", "datetime", 
+        #                      "discharge.max", "discharge.max.approval", 
+        #                      "discharge.min", "discharge.min.approval", 
+        #                      "discharge.mean", "discharge.mean.approval", 
+        #                      "gage.height.max", "gage.height.max.approval", 
+        #                      "gage.height.min", "gage.height.min.approval", 
+        #                      "gage.height.mean", "gage.height.mean.approval")
+#View(stream.flow.explore)
+```
 
 Question: Did you do this?
 
-> ANSWER: 
+> ANSWER: Yes
 
 ## Set up your session 
 2. Set up your session. Upload the EPA air quality raw dataset for PM2.5 in 2018, and the processed NTL-LTER dataset for nutrients in Peter and Paul lakes. Build a ggplot theme and set it as your default theme. Make sure date variables are set to a date format.
 
-```{r}
+```{r warning = FALSE, message = FALSE}
+getwd()
+library(tidyverse)
+#install.packages("lubridate")
+library(lubridate)
+#install.packages("nlme")
+library(nlme)
+#install.packages("lsmeans")
+library(lsmeans)
+#install.packages("multcompView")
+library(multcompView)
+library(trend)
 
+EPAair <- read.csv("../Data/Raw/EPAair_PM25_NC2018_raw.csv")
+NTL.Processed <- read.csv("../Data/Processed/NTL-LTER_Lake_Nutrients_PeterPaul_Processed.csv")
+
+View(EPAair)
+View(NTL.Processed)
+
+EPAair$Date <- as.Date(EPAair$Date,format = "%m/%d/%y")
+NTL.Processed$sampledate <- as.Date(NTL.Processed$sampledate, 
+                              format = "%Y-%m-%d")
+
+mytheme <- theme_bw(base_size = 14) +
+  theme(strip.background = element_rect(fill = "white"))
+
+theme_set(mytheme)
 ```
 
 
@@ -51,7 +87,10 @@ Research question: Do PM2.5 concentrations have a significant trend in 2018?
 3a. Illustrate PM2.5 concentrations by date. Do not split aesthetics by site.
 
 ```{r}
-
+#3a
+ggplot(EPAair, aes(x = Date, y = Daily.Mean.PM2.5.Concentration)) +
+  geom_point(size = 0.5, alpha = 0.4) +
+  labs(x = "Date", y = "Daily Mean PM 2.5 (ug/m^3 LC)")
 ```
 
 3b. Insert the following line of code into your R chunk. This will eliminate duplicate measurements on single dates for each site.
@@ -63,23 +102,46 @@ PM2.5 = PM2.5[!duplicated(PM2.5$Date),]
 3d. Run a mixed effects model. 
 
 ```{r}
+#3b
+EPAair = EPAair[order(EPAair[,'Date'],-EPAair[,'Site.ID']),]
+EPAair = EPAair[!duplicated(EPAair$Date),]
 
+#3c
+PMtest.auto <- lme(data = EPAair,
+                     Daily.Mean.PM2.5.Concentration ~ Date, 
+                     random = ~1|Site.Name)
+PMtest.auto
+ACF(PMtest.auto)
+
+#3d
+PMtest.mixed <- lme(data = EPAair,
+                     Daily.Mean.PM2.5.Concentration ~ Date, 
+                     random = ~1|Site.Name,
+                     correlation = corAR1(form = ~ Date|Site.Name, value = 0.514),
+                     method = "REML")
+summary(PMtest.mixed)
 ```
 
 Is there a significant increasing or decreasing trend in PM2.5 concentrations in 2018? 
 
-> ANSWER: 
+> ANSWER: There is a decreasing trend in PM2.5 concentrations in 2018, but the trend is not significant.
 
 3e. Run a fixed effects model with Date as the only explanatory variable. Then test whether the mixed effects model is a better fit than the fixed effect model. 
 
 ```{r}
+#3e
+PMtest.fixed <- gls(data = EPAair,
+                      Daily.Mean.PM2.5.Concentration ~ Date, 
+                      method = "REML")
+summary(PMtest.fixed)
 
+anova(PMtest.mixed, PMtest.fixed)
 ```
 
 
 Which model is better?
 
-> ANSWER: 
+> ANSWER: The mixed-effects model is better based on the results of the ANOVA model.
 
 
 ## Run a Mann-Kendall test
@@ -89,17 +151,50 @@ Research question: Is there a trend in total N surface concentrations in Peter a
 4. Duplicate the Mann-Kendall test we ran for total P in class, this time with total N for both lakes. Make sure to run a test for changepoints in the datasets (and run a second one if a second change point is likely). 
 
 ```{r}
+# Wrangle dataset
+PeterPaul.nutrients.surface <- 
+  NTL.Processed %>%
+  select(-lakeid, -depth_id, -comments) %>% 
+  filter(depth == 0) %>%
+  filter(!is.na(tn_ug))
 
+# Visualize data
+ggplot(PeterPaul.nutrients.surface, aes(x = sampledate, y = tn_ug, color = lakename)) + 
+  geom_point() +
+  scale_color_manual(values = c("#7fcdbb", "#253494"))
+
+# Run a Mann-Kendall test
+mk.test(PeterPaul.nutrients.surface$tn_ug)
+
+# Null hypothesis is that there is no trend over time (accept if p > 0.05)
+# z tells us the direction (+/-) and magnitude of our trend. Output here (4.4) tells us that
+# there's a somewhat strong positive trend.
 ```
 
 
 What are the results of this test?
 
-> ANSWER: 
+> ANSWER: The Mann-Kendall test reveals that there is a signficant, but moderate increasing trend of nitrogen concentrations in both Peter Lake and Paul Lake.
 
 5. Generate a graph that illustrates the TN concentrations over time, coloring by lake and adding vertical line(s) representing changepoint(s).
 
 ```{r}
+#Pettitt Test
+pettitt.test(PeterPaul.nutrients.surface$tn_ug)
+# Change point at row 106
 
+#Mann-Kenndall Test for each portion of data
+mk.test(PeterPaul.nutrients.surface$tn_ug[1:105])
+mk.test(PeterPaul.nutrients.surface$tn_ug[106:197])
+# No change point exists in either portion of data
+
+#Visualize Data
+ggplot(PeterPaul.nutrients.surface, aes(x = sampledate, y = tn_ug, color = lakename)) + 
+  geom_point() +
+  scale_color_manual(values = c("#7fcdbb", "#253494")) +
+  geom_vline(xintercept = as.Date("1993-06-02"), color = "#253494", lty = 5) +
+  scale_x_date(limits = as.Date(c("1991-01-01", "1999-12-31")), 
+    date_breaks = "1 year", date_labels = "%Y") +
+  labs(x = "Year", y = "Total Nitrogen (ug/L)")
 ```
 
