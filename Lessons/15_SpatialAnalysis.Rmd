@@ -66,6 +66,7 @@ EPAair_PM_avg <- EPAair_PM25_NC2018_raw %>%
 #Plot the data using longitude and latitude as X and Y
 ggplot(EPAair_PM_avg, aes(x=SITE_LONGITUDE, y=SITE_LATITUDE)) + 
   geom_point(aes(color=meanPM), size=4) #+ coord_equal() 
+# cord_equal() scales the axes a bit better
 ```
 
 This is more of a proof of concept than a useful map. We can sort of visualize spatial patterns in the data, but without context of scale or location, it's somewhat difficult. We can greatly improve this map with the help of some mapping packages for R...
@@ -109,11 +110,14 @@ library(leaflet)
 #Create the map and add Tiles
 myMap  <- leaflet(data=EPAair_PM_avg) %>% 
   addTiles() %>% 
+  # tiles are the background maps, here we're using the default
   addCircleMarkers(~SITE_LONGITUDE,~SITE_LATITUDE,
                    radius=(~meanPM*2),
                    stroke = FALSE, 
+  # stroke is the outline of the features
                    fillOpacity = 0.3,
                    popup = ~as.character(`Site.Name`))
+  # popup makes labels appear when you click on a feature, labeled by Site.Name
 #Show the map
 myMap
 ```
@@ -145,7 +149,7 @@ Let's explore a few examples to familiarize ourselves with the `sf` package.
 First, let's convert our EPA dataframe to a simple features ("sf") dataframe and explore what's different:
 ```{r Create simple features from lat/lng fields}
 #Import the sf library
-#install.packages('sf')
+install.packages('sf')
 library(sf)
 
 #Convert the dataset to a spatially enabled "sf" data frame
@@ -153,12 +157,15 @@ EPAair_PM_avg_sf <- st_as_sf(EPAair_PM_avg,coords = c('SITE_LONGITUDE','SITE_LAT
 
 #Do you see a new column name?                
 colnames(EPAair_PM_avg_sf)
+# geometry is a new column, and it consolidated the latlong columns
 
 #What is the class of the values in the geometry column?
 class(EPAair_PM_avg_sf$geometry)
+# "sfc_POINT" which us a point features (sfc means simple feature column)
 
 #What does this look like
 head(EPAair_PM_avg_sf)
+# Gives us (x,y) looking coordinates
 
 #Plot the geometry...
 plot(EPAair_PM_avg_sf$geometry)
@@ -175,6 +182,7 @@ mapview(EPAair_PM_avg_sf['meanPM'])
 #With geometries now available in a column, we can use ggplot with the geom_sf object
 ggplot() + 
   geom_sf(data=EPAair_PM_avg_sf, aes(color=meanPM), size=4)
+# geom_sf plots our geometry as a spatial feature (axes are coordinates)
 
 ```
 
@@ -189,6 +197,7 @@ With our EPA data now spatially enabled, we can perform spatial analysis with th
 Durham_buffer <- EPAair_PM_avg_sf %>% 
   filter(Site.Name == 'Durham Armory') %>% 
   st_buffer(0.1)
+# st_buffer uses units of your geometry (in this case it's degrees)
 
 #View the result
 mapView(Durham_buffer)
@@ -227,6 +236,9 @@ Some CRS, however, do not have an associated EPSG code, and for those, we can us
 ```{r Explore the CRS of our dataset}
 #Recall what the CRS is of our EPA dataset
 st_crs(EPAair_PM_avg_sf)
+# st_crs is used to ID the coordinate system
+# EPSG refers to a specific coordinate system that we can look up using the link below. 
+# proj4string gives us the projection and datum
 ```
 
 Now look that EPSG up on http://spatialreference.org. 
@@ -242,6 +254,7 @@ Applying our knowledge of CRS, let's transform our EPA sites from its native geo
 ```{r Transform our data to UTM 17 and buffer it}
 #Transform the entire EPA dataset to the UTM Zone 17N crs
 EPAair_PM_avg_sf_UTM <- st_transform(EPAair_PM_avg_sf, crs=26917)
+# convert to UTM 17N using the crs code, which can be found using spatialreference.org
 
 #Rebuffer the Durham Armory site. Is it now circular? 
 DA_UTM_buffer <- EPAair_PM_avg_sf_UTM %>% 
