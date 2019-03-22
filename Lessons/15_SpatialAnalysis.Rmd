@@ -304,6 +304,7 @@ Below we read in the USA counties shapefile, filtering for just the NC features 
 ```{r read the USA county shapfile, subsetting for NC}
 counties_sf<- st_read('./Data/Spatial/cb_2017_us_county_20m.shp') %>% 
   filter(STATEFP == 37) #Filter for just NC Counties
+# StateFP is just a code for each state in the country
 
 #CRS (Is this the same as the EPA Dataset?)
 st_crs(counties_sf)
@@ -316,6 +317,7 @@ nrow(counties_sf)
 
 #Reveal the extent of this dataset via the st_bbox() function
 st_bbox(counties_sf)
+#bbox is short for bounding box if we want to put a simple box around our data to approximate the extent
 
 #View the data
 head(counties_sf)
@@ -329,25 +331,26 @@ mapView(counties_sf)
 
 ```{r read HUCs shapefile}
 #Read the shapefile into an sf dataframe named "huc8_sf"
-huc8_sf <-   
+huc8_sf <- st_read('./Data/Spatial/huc_250k_nc.shp')
 
 #Check the CRS
-
+st_crs(huc8_sf)
 
 #Exaimine the column names
-
+names(huc8_sf)
 
 #View the data as a map
-
+mapView(huc8_sf)
 ```
 
 > _Challenge_: Read in the NC 8-Digit HUC dataset again, but this time _filter_ the data so the result only includes the one with a HUC_NAME value of 'Upper Neuse'.
 
 ```{r Select the Upper Neuse HUC 8}
 #Read the shapefile into an sf dataframe
-upperNeuse_sf <-  
+upperNeuse_sf <- st_read('./Data/Spatial/huc_250k_nc.shp') %>%
+  filter(HUC_NAME == 'Upper Neuse')
   
-
+mapView(upperNeuse_sf)
 ```
 
 
@@ -355,22 +358,25 @@ upperNeuse_sf <-
 ```{r Dissolve all counties into a single feature}
 #Aggregate the data using group_by and summarize, just as you would a non-spatial dataframe
 state_sf <- counties_sf %>% 
-  group_by('STATEFP') %>% 
   summarize(ALAND = sum(ALAND))
+# Summarize function is summing the area of the counties in NC
 
 #View the data
 mapview(state_sf)
 
 #Alternatively, we could use the `st_union` function
 state_sf2 <- st_union(counties_sf)
+# st_union is a function that combines the geomtries of a dataset. It creates a list of geometries
 mapview(state_sf2)
 ```
 
 > Now you try it: Aggregate the HUC data on the SUB attribute, computing the sum of the "AREA" field and view the result. 
 
 ```{r Aggregate the HUC data on an attribute, saving as huc2_sf}
-huc2_sf <- 
-  
+huc2_sf <- huc8_sf %>%
+  group_by(SUB) %>%
+  summarize(AREA = sum(AREA))
+ # This took our HUC dataset, and grouped rows based on SUB, which is the HUC2 code, and then summed the areas of the HUC8s within each HUC2, creating a layer of HUC2s. 
   
 mapview(huc2_sf)
 ```
@@ -387,6 +393,7 @@ counties_sf_utm <- st_transform(counties_sf, c=26917)
 state_sf_utm <- st_transform(state_sf,c=26917)
 huc8s_sf_utm <- st_transform(huc8_sf, c=26917)
 huc2_utm = st_transform(huc2_sf, c=26917)
+# st_transform just converts CRS to another CRS
 
 # Convert all to WGS84 (crs=4326)
 EPAair_wgs84 <- st_transform(EPAair_PM_avg_sf, c=4326)
@@ -399,6 +406,8 @@ huc2_WGS84<- st_transform(huc2_sf,c=4326)
 leaflet() %>% addTiles() %>% 
   addPolygons(data=counties_WGS84,weight=1,color='red') %>% 
   addPolygons(data=huc8s_WGS84,weight=1)
+# leaflet can ONLY use WGS84.
+# WGS84 is best for displaying maps, but UTM is best for spatial analysis because units are in meters, not degrees.
 ```
 
 
@@ -421,18 +430,22 @@ ggplot() +
   geom_sf(data = counties_sf_utm, aes(fill = ALAND), color = 'white')  +
   geom_sf(data = EPAair_PM_avg_sf_UTM, color='blue', size=2) + 
   scale_fill_gradient(low="yellow", high="darkgreen")
+# same code, but the ordering matters
 ```
 
 ### leaflet
 Tip: See http://leaflet-extras.github.io/leaflet-providers/ for other basemaps
 ```{r Visualizing multiple datasets with leaflet}
 leaflet() %>% 
+# create leaflit object
   addProviderTiles(providers$Esri.WorldShadedRelief) %>%  
+# Adds a specific base map, which can be found at the link above 
   addPolygons(data = counties_WGS84, color = "orange", weight = 1, smoothFactor = 0.5,   
               opacity = 1.0, fillOpacity = 0.5,
               fillColor = ~colorQuantile("YlGnBu", ALAND)(ALAND)) %>% 
   addPolygons(data = huc2_WGS84, color=NA, weight = 2) %>% 
   addMarkers(data=EPAair_wgs84,popup = ~as.character(`Site.Name`))
+# addMarkers adds a little pin that can include pop up info
 
 ```
 
@@ -456,6 +469,7 @@ m2 <- leaflet() %>%
                    popup = ~as.character(`Site.Name`))
 latticeview(m1, m2)
 sync(m1,m2)
+# syncs up maps so when you move on one, the action is mimiced on the other one
 ```
 
 
@@ -465,21 +479,25 @@ sync(m1,m2)
 ```{r}
 #Clip the HUC2 data set by the NC State boundary dataset
 huc2_UTM_nc <- st_intersection(huc2_utm,state_sf_utm)
+# st_intersection(layer to be clipped, layer that defines clip boundary)
 mapview(huc2_UTM_nc)
 ```
 
 > Exercise: Try subsetting the huc2_UTM dataset for SUB = 0302, then clipping counties with that subset.
 
 ```{r EXERCISE: Clip the counties dataset with the border of HUC 0302}
-huc0302_counties <- 
+huc2_0302_utm <- huc8s_sf_utm %>%
+  filter(SUB == '0302')
+
+huc0302_counties <- st_intersection(counties_sf_utm,huc2_0302_utm)
   
 #Map the product, showing values by land area
-mapview(huc0302_counties['ALAND'])
+mapview(huc0302_counties['ALAND'], legend = FALSE)
 ```
 
 
 ## Attribute joins with `merge`
-To add more attributes to our spatial features, we can merge records just as we do with non-spatial dataframes, i.e. with the `merge` command. Here we will read in a table of county census data an join them to our counties_sf data set.
+To add more attributes to our spatial features, we can merge records just as we do with non-spatial dataframes, i.e. with the `merge` command. Here we will read in a table of county census data and join them to our counties_sf data set.
 
 ```{r Join demographic data to county features}
 #Read in the demographic data
@@ -489,6 +507,8 @@ demog_df <- read.csv('./Data/Spatial/NC_Demography.csv') %>%
 #Join the two datasets using "GEOID" from the left dataset and "FIPS" from the right
 counties_sf_utm_join <- counties_sf_utm %>% 
   left_join(y = demog_df,by = c("GEOID" =  "FIPS"))
+# by is specifying that these columns will be the reference columns for the join
+# if we joined our counties dataset to our demography dataset, then it would not see the joined dataset as a spatial dataframe anymore.
 
 #Check the dimensions
 dim(counties_sf_utm)
@@ -519,6 +539,7 @@ myMap
 
 #Compute the centroids and show them
 triCo_centroids <-  st_centroid(triCo)
+# Finds the center of each polygon
 myMap <- myMap + geom_sf(data = triCo_centroids, color = 'blue')
 myMap
 
@@ -567,9 +588,11 @@ theSite_sfc_transformed <- st_transform(theSite_sfc, crs = st_crs(counties_sf_ut
 resultMask <- st_intersects(counties_sf_utm, 
                             theSite_sfc_transformed,
                             sparse = FALSE) #The `sparse` option returns a Boolean mask
+# We're creating a boolean mask to see where our point resides
 
 #Filter the counties dataset using the boolean mask
 selCounties <- counties_sf_utm[resultMask,]
+# Filter it to isolate the county our point is in
 
 #Map the results
 mapView(counties_sf[resultMask,])
@@ -578,7 +601,7 @@ mapView(counties_sf[resultMask,])
 > Questions: how might we use the `st_buffer` function to show all counties within 30km of the site?
 
 ```{r Select counties within a 30 km area from the site}
-
+# Create a buffer around our point, and then repeat the process above to see which counties it intersects
                             
 ```
 
