@@ -19,17 +19,24 @@ editor_options:
 1. **YAML Header** surrounded by --- on top and bottom
     + YAML templates include options for html, pdf, word, markdown, and interactive
     + More information on formatting the YAML header can be found in the cheat sheet
+#This is the header at the beginning of each rmd
 2. **R Code Chunks** surrounded by ``` on top and bottom
     + Create using `Cmd/Ctrl` + `Alt` + `I`
     + Can be named {r name} to facilitate navigation and autoreferencing
     + Chunk options allow for flexibility when the code runs and when the document is knitted
 3. **Text** with formatting options for readability in knitted document
 
-A handy cheat sheet for R markdown can be found [here](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf). Another one can be found [here](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf).
+A handy cheat sheet for R markdown can be found [here](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf).
+Another one can be found [here](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf).
 
 ## WHY R MARKDOWN?
 
 <Fill in our discussion below with bullet points. Use italics and bold for emphasis>
+<Arrows on either side of a sentence omit it from the rmd doc>
+The following symbols can be used to make bullet point list (-,+,*). All need a space afterwards
+- Readable
+- Code output, text, and notes are all in one document
+- Can be knit to useful formats (PDF, html, docx) 
 
 ## TEXT EDITING CHALLENGE
 
