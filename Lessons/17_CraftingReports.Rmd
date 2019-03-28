@@ -21,7 +21,7 @@ editor_options:
     + More information on formatting the YAML header can be found in the cheat sheet
 #This is the header at the beginning of each rmd
 2. **R Code Chunks** surrounded by ``` on top and bottom
-    + Create using `Cmd/Ctrl` + `Alt` + `I`
+    + Create using `Cmd` + `opt` + `I`
     + Can be named {r name} to facilitate navigation and autoreferencing
     + Chunk options allow for flexibility when the code runs and when the document is knitted
 3. **Text** with formatting options for readability in knitted document
@@ -34,42 +34,107 @@ Another one can be found [here](https://www.rstudio.com/wp-content/uploads/2015/
 <Fill in our discussion below with bullet points. Use italics and bold for emphasis>
 <Arrows on either side of a sentence omit it from the rmd doc>
 The following symbols can be used to make bullet point list (-,+,*). All need a space afterwards
-- Readable
+
+- Readable, legible code
+
 - Code output, text, and notes are all in one document
+
 - Can be knit to useful formats (PDF, html, docx) 
+
+- git friendly
+
+- Reproducable
 
 ## TEXT EDITING CHALLENGE
 
 Create a table below that details the example datasets we have been using in class. The first column should contain the name of the dataset and the second column should include some relevant information about the dataset.
 
+Dataset     |  Details
+----------- |  -------
+EPA Air     |  Ozone and PM 2.5 data in NC for 2017 and 2018
+Lakes       |  Nutrient and physical data for Peter and Paul lakes
+Stream Flow |  Stream flow on the Eno River at Hillsborough
+
+<dashed lines determine the width of your boxes. If you have a tall, skinny table, you can fit it to the page better with more dashes>
 
 ## R CHUNK EDITING CHALLENGE
 ### Installing packages
 Create an R chunk below that installs the package `knitr`. Instead of commenting out the code, customize the chunk options such that the code is not evaluated (i.e., not run). 
-
+```{r eval=FALSE}
+install.packages("knitr")
+```
 
 ### Setup
 Create an R chunk below called "setup" that checks your working directory, loads the packages `tidyverse` and `knitr`, and sets a ggplot theme. 
+```{r setup, warning=FALSE}
+getwd()
+library(tidyverse)
+library(knitr)
+
+mytheme <- theme_bw(base_size = 14) +
+  theme(strip.background = element_rect(fill = "white"))
+
+theme_set(mytheme)
+```
+
 
 Load the NTL-LTER_Lake_Nutrients_Raw dataset, display the head of the dataset, and set the date column to a date format.
+```{r include=FALSE}
+Lake_nut_raw <- read_csv("../Data/Raw/NTL-LTER_Lake_Nutrients_Raw.csv")
+
+head(Lake_nut_raw)
+
+Lake_nut_raw$sampledate <- as.Date(Lake_nut_raw$sampledate, format = "%m/%d/%Y")
+class(Lake_nut_raw$sampledate)
+```
 
 Customize the chunk options such that the code is run but is not displayed in the final document.
 
 
 ### Data Exploration, Wrangling, and Visualization
 Create an R chunk below to create a processed dataset do the following operations: 
+```{r}
+Lake_nut_skinny <- select(Lake_nut_raw, -lakeid, -depth_id, -comments)
+
+Lake_nut_surface <- Lake_nut_skinny %>%
+  filter(depth == 0)
+```
 
 * Include all columns except lakeid, depth_id, and comments
 * Include only surface samples (depth = 0 m)
 
 
 Create a second R chunk to create a summary dataset with the mean, minimum, maximum, and standard deviation of total nitrogen concentrations for each lake. Create a second summary dataset that is identical except that it evaluates total phosphorus. Customize the chunk options such that the code is run but not displayed in the final document. 
+```{r include=FALSE}
+Lake_N_summary <- Lake_nut_surface %>%
+  group_by(lakename) %>%
+  summarise(meanN = mean(tn_ug, na.rm = TRUE),
+            minN = min(tn_ug, na.rm = TRUE),
+            maxN = max(tn_ug, na.rm = TRUE),
+            stdN = sd(tn_ug, na.rm = TRUE))
+
+Lake_P_summary <- Lake_nut_surface %>%
+  group_by(lakename) %>%
+  summarise(meanP = mean(tp_ug, na.rm = TRUE),
+            minP = min(tp_ug, na.rm = TRUE),
+            maxP = max(tp_ug, na.rm = TRUE),
+            stdP = sd(tp_ug, na.rm = TRUE))
+```
 
 
 Create a third R chunk that uses the function `kable` in the knitr package to display two tables: one for the summary dataframe for total N and one for the summary dataframe of total P. Use the `caption = " "` code within that function to title your tables. Customize the chunk options such that the final table is displayed but not the code used to generate the table. 
+```{r echo=FALSE}
+kable(Lake_N_summary)
+kable(Lake_P_summary)
+```
 
 
-Create a fourth and fifth R chunk that generates two plots (one in each chunk): one for total N over time with different colors for each lake, and one with the same setup but for total P. Decide which geom option will be appropriate for your purpose, and select a color palette that is visually pleasing and accessible. Customize the chunk options such that the final figures are displayed but not the code used to generate the figures. In addition, customize the chunk options such that the figures are aligned on the left side of the page. Lastly, add a fig.cap chunk option to add a caption (title) to your plot that will display underneath the figure.
+Create a fourth and fifth R chunk that generates two plots (one in each chunk): one for total N over time with different colors for each lake, and one with the same setup but for total P. Decide which geom option will be appropriate for your purpose, and select a color palette that is visually pleasing and accessible. Customize the chunk options such that the final figures are displayed but not the code used to generate the figures. Lastly, add a fig.cap chunk option to add a caption (title) to your plot that will display underneath the figure.
+```{r echo=FALSE}
+ggplot(Lake_nut_surface) +
+  geom_point(aes(x = sampledate, y = tn_ug, color = lakename))
+  
+```
 
 
 ### Other options
