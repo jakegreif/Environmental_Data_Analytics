@@ -1,12 +1,15 @@
 ---
-title: "Assignment: Spatial Analysis in R"
-author: Jake Greif
-output:
-  html_document:
-    toc: true
-    toc_depth: 2
-    theme: "cosmo"
+title: 'Assignment: Spatial Analysis in R'
+author: "Jake Greif"
 geometry: margin=2.54cm
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
 editor_options:
   chunk_output_type: console
 ---
@@ -33,7 +36,7 @@ You should notice that the answer is highlighted in green by RStudio.
 library(tidyverse, quietly = TRUE)
 library(sf, quietly = TRUE)
 library(leaflet, quietly = TRUE)
-library(mapView)
+library(mapview)
 ```
 
 ### 2. Read filtered county features into an sf dataframe and plot
@@ -46,9 +49,9 @@ Nebraska's state FIPS code is `31` (as North Carolina's was `37`).
 * Filter for Nebraska counties (State FIPS = 31)
 * Show the dataset's coordinate reference system
 * Plot the records as a map (in any format)
-```{r Read the county data into an sf dataframe}
+```{r Read the county data into an sf dataframe, warning=FALSE}
 #Read in Counties shapefile into an sf dataframe, filtering for just NE counties
-NE_counties <- st_read('./Data/Spatial/cb_2017_us_county_20m.shp') %>% 
+NE_counties <- st_read('../Data/Spatial/cb_2017_us_county_20m.shp') %>% 
   filter(STATEFP == 31) 
 
 #Reveal the CRS of the counties features
@@ -69,7 +72,7 @@ info on this datset.)
 * Display the column names of this dataset
 ```{r Read in USGS Gage Locations}
 #Read in gage locations csv as a dataframe
-NE_gages <- read.csv("./Data/Raw/NWIS_SiteInfo_NE_RAW.csv")
+NE_gages <- read.csv("../Data/Raw/NWIS_SiteInfo_NE_RAW.csv")
 
 #Reveal the names of the columns
 names(NE_gages)
@@ -114,7 +117,7 @@ stream gage heights (in meters) recorded during the recent flood event. This fil
 * Once joined, we will again have to convert this product (a dataframe) into a spatial dataframe. Do that.
 ```{r}
 #Read in the data
-NE_gage_heights <- read.csv("./Data/Raw/NWIS_SiteFlowData_NE_RAW.csv")
+NE_gage_heights <- read.csv("../Data/Raw/NWIS_SiteFlowData_NE_RAW.csv")
 
 #Show the column names
 names(NE_gage_heights)
