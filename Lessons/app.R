@@ -54,6 +54,7 @@ server <- function(input, output) {
      } else if(n <= 500){
        bins <- 30
      }
+     #if sample size is < 25, give 10 bins, if sample is < 50, give 20 bins, etc.
      
      set.seed(1001) # prevent output from changing based on plot type
 
@@ -64,6 +65,7 @@ server <- function(input, output) {
      p <- ggplot() + scale_x_continuous(limits = c(-20, 20))
      if(input$histogram) p <- p + geom_histogram(aes(x, y = ..density..), bins = bins, colour = 'black', fill = 'white') # add hist if checked
      if(input$density) p <- p + geom_density(aes(x), alpha=.2, fill="#FF6666") # add density if checked
+     
      p + theme_minimal()
    })
 }
